@@ -34,23 +34,32 @@ with st.sidebar:
     st.markdown("**Titelleiste**")
     custom_title = st.text_input("Fenster-/Seiten-Titel", value="Team-/Gruppen-Generator – Jürg Boltshauser 09.02.2026")
     if custom_title:
-        st.session_state["__title"] = custom_title  # nur visuell, Streamlit-Titel ist in set_page_config gesetzt
+        st.session_state["__title"] = custom_title
     st.markdown("---")
     st.info("💡 Tipp: Du kannst deine Liste auch in Excel vorbereiten und hier einfügen.")
 
 # ---------- 1) Teilnehmerliste ----------
 st.header("1️⃣ Teilnehmerliste eingeben")
 
-raw_list = st.text_area(
-    "Namen (eine Person pro Zeile):",
-    height=200,
-    placeholder="Max Muster\nLaura Beispiel\n..."
-)
+with st.form("teilnehmer_form"):
+    raw_list = st.text_area(
+        "Namen (eine Person pro Zeile):",
+        height=200,
+        placeholder="Max Muster\nLaura Beispiel\n..."
+    )
+    submitted_list = st.form_submit_button("Liste übernehmen")
 
-if raw_list.strip():
-    names = [n.strip() for n in raw_list.splitlines() if n.strip()]
+if submitted_list:
+    if raw_list.strip():
+        names = [n.strip() for n in raw_list.splitlines() if n.strip()]
+    else:
+        names = []
+elif "names" in st.session_state:
+    names = st.session_state["names"]
 else:
     names = []
+
+st.session_state["names"] = names
 
 # ---------- 2) Teilnehmer bearbeiten ----------
 st.header("2️⃣ Teilnehmer bearbeiten")
@@ -81,7 +90,7 @@ col_s1, col_s2 = st.columns([1, 3])
 with col_s1:
     search_term = st.text_input("🔍 Filtern nach Name", value="")
 with col_s2:
-    st.write("")  # spacing
+    st.write("")
 
 if search_term:
     filtered_df = edited_df[edited_df["Name"].str.contains(search_term, case=False, na=False)]
@@ -103,10 +112,6 @@ generate = st.button("🚀 Teams generieren")
 
 # ---------- Hilfsfunktionen ----------
 def snake_draft_allocation(df_sorted: pd.DataFrame, groups: int, rng: random.Random) -> list:
-    """
-    Verteilt Zeilen (Teilnehmer) im Snake-Draft-Verfahren auf 'groups' Teams.
-    df_sorted: DataFrame, absteigend nach Stärke sortiert.
-    """
     teams = [[] for _ in range(groups)]
     direction = 1
     idx = 0
@@ -122,7 +127,6 @@ def snake_draft_allocation(df_sorted: pd.DataFrame, groups: int, rng: random.Ran
     return teams
 
 def to_csv_download(teams_list: list) -> bytes:
-    """Erzeugt eine CSV als Bytes aus der Teamliste."""
     rows = []
     for gi, team in enumerate(teams_list, start=1):
         for person in team:
@@ -136,23 +140,17 @@ def to_csv_download(teams_list: list) -> bytes:
 
 # ---------- 5) Generierung ----------
 if generate:
-    # Abwesende raus
     present_df = edited_df[edited_df["Abwesend"] == False].copy()
 
-    # Sanity Checks
     if len(present_df) == 0:
         st.error("Alle Teilnehmer sind abwesend!")
         st.stop()
 
-    # Seed optional setzen (beeinflusst nur die Randomisierung vor dem Sortieren)
     rng = random.Random(seed_value if seed_on else None)
 
-    # Bei gleicher Stärke zufällig durchmischen, damit die Reihenfolge nicht starr ist
-    # (wir fügen eine kleine Zufallsspalte hinzu und sortieren danach sekundär)
     present_df["__shuffle"] = [rng.random() for _ in range(len(present_df))]
     present_df = present_df.sort_values(by=["Stärke (1-4)", "__shuffle"], ascending=[False, True]).drop(columns="__shuffle")
 
-    # Anzahl Gruppen bestimmen
     if num_groups > 0 and group_size == 0:
         groups_count = int(num_groups)
     elif group_size > 0 and num_groups == 0:
@@ -165,15 +163,13 @@ if generate:
         st.error("Gruppenzahl muss > 0 sein.")
         st.stop()
 
-    # Snake Draft
     teams = snake_draft_allocation(present_df, groups_count, rng)
 
-    # Anzeige
     st.header("5️⃣ Ergebnis")
     total_people = sum(len(t) for t in teams)
     st.write(f"**{groups_count} Gruppen**, **{total_people} anwesend**")
 
-    cols = st.columns(min(groups_count, 4))  # bis zu 4 Spalten nebeneinander
+    cols = st.columns(min(groups_count, 4))
     for i, team in enumerate(teams, start=1):
         col = cols[(i - 1) % len(cols)]
         with col:
@@ -186,7 +182,6 @@ if generate:
             st.write(f"**Gesamtstärke: {total_strength}**")
             st.dataframe(team_df[["Name", "Stärke (1-4)"]], use_container_width=True, hide_index=True, height=200)
 
-    # Download
     st.markdown("---")
     csv_bytes = to_csv_download(teams)
     filename = f"Teams_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.csv"
