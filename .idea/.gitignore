@@ -1,40 +1,24 @@
-# --- Python ---
-__pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-*.pdb
+# -------------------------
+# Ignoriere alles
+# -------------------------
+*
 
-# --- Virtual Environments ---
-.venv/
-venv/
-env/
+# -------------------------
+# Ausnahmen (diese Dateien/Ordner sollen NICHT ignoriert werden)
+# -------------------------
 
-# --- Streamlit ---
-.streamlit/cache/
-.streamlit/secrets.toml
+# Gitignore selbst
+!.gitignore
 
-# --- OS / Editor ---
-.DS_Store
-Thumbs.db
-.idea/
-.vscode/
+# Python-Quellcode
+!*.py
 
-# --- Logs / Temp ---
-*.log
-*.tmp
-*.bak
+# Wichtige Projektdateien
+!requirements.txt
+!README.md
+!streamlit_app.py
 
-# --- Data / Exports ---
-*.csv
-*.xlsx
-exports/
-backtests/
-watchlists/
-
-# --- Jupyter ---
-.ipynb_checkpoints/
-
-# --- Misc ---
-*.swp
-*.swo
+# Teilnehmerlisten erlauben
+!participants/
+!participants/*.csv
+!participants/*.txt
