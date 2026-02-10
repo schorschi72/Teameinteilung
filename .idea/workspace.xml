@@ -5,9 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="0664c136-a15f-4e61-8443-20466d01393f" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.venv/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.venv/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Teameinteilung.py" beforeDir="false" afterPath="$PROJECT_DIR$/Teameinteilung.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
