@@ -1,40 +1,18 @@
-# --- Python ---
-__pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-*.pdb
+# -------------------------
+# (Deine bisherigen Regeln bleiben...)
+# -------------------------
 
-# --- Virtual Environments ---
-.venv/
-venv/
-env/
+# Verhindere, dass ALLES ignoriert wird (entferne diese Zeile ODER setze die Ausnahmen direkt danach):
+# *
+# Falls du sie behältst, setze die folgenden Negationen NACH dieser Zeile:
 
-# --- Streamlit ---
-.streamlit/cache/
-.streamlit/secrets.toml
+# Erlaube Quellcode & wichtige Dateien
+!.gitignore
+!*.py
+!requirements.txt
+!README.md
+!streamlit_app.py
 
-# --- OS / Editor ---
-.DS_Store
-Thumbs.db
-.idea/
-.vscode/
-
-# --- Logs / Temp ---
-*.log
-*.tmp
-*.bak
-
-# --- Data / Exports ---
-*.csv
-*.xlsx
-exports/
-backtests/
-watchlists/
-
-# --- Jupyter ---
-.ipynb_checkpoints/
-
-# --- Misc ---
-*.swp
-*.swo
+# Erlaube Ordner für Teilnehmerlisten (CSV)
+!participants/
+!participants/*.csv

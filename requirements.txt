@@ -1,3 +1,5 @@
 streamlit>=1.26
 pandas>=1.5
-numpy>=1.23
+numpy>=1.23streamlit
+pandas
+openpyxl
