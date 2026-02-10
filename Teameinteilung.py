@@ -31,13 +31,22 @@ st.markdown("""
 # ----------------------------------------
 # CSV Persistenz
 # ----------------------------------------
+
+# Sichere Bestimmung des Basisverzeichnisses
 try:
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-except NameError:
-    BASE_DIR = os.getcwd()
+    BASE_DIR = os.path.dirname(os.path.realpath(__file__))
+except:
+    BASE_DIR = os.path.realpath(os.getcwd())
 
 PARTICIPANTS_DIR = os.path.join(BASE_DIR, "participants")
 os.makedirs(PARTICIPANTS_DIR, exist_ok=True)
+
+# --- DEBUG (kann später entfernt werden) ---
+st.write("Working Directory:", os.getcwd())
+st.write("BASE_DIR:", BASE_DIR)
+st.write("Participants Dir:", PARTICIPANTS_DIR)
+st.write("Files:", os.listdir(PARTICIPANTS_DIR))
+# --------------------------------------------
 
 EXPECTED_COLS = ["Name", "Stärke (1-4)", "Abwesend"]
 
@@ -68,12 +77,17 @@ def ensure_cols(df: pd.DataFrame) -> pd.DataFrame:
         if c not in df.columns:
             if c == "Stärke (1-4)":
                 df[c] = 4
-            elif c == "Abwesend":
+            elif c == "Abwesent":
                 df[c] = False
             else:
                 df[c] = ""
 
-    df["Stärke (1-4)"] = pd.to_numeric(df["Stärke (1-4)"], errors="coerce").fillna(4).clip(1, 4).astype(int)
+    df["Stärke (1-4)"] = (
+        pd.to_numeric(df["Stärke (1-4)"], errors="coerce")
+        .fillna(4)
+        .clip(1, 4)
+        .astype(int)
+    )
     df["Abwesend"] = df["Abwesend"].astype(bool)
 
     return df[EXPECTED_COLS]
@@ -85,7 +99,7 @@ def load_participants(name: str) -> pd.DataFrame:
         return pd.DataFrame(columns=EXPECTED_COLS)
     try:
         df = pd.read_csv(p, encoding="utf-8")
-    except Exception:
+    except:
         df = pd.read_csv(p, encoding="latin-1")
     return ensure_cols(df)
 
@@ -112,31 +126,20 @@ with st.sidebar:
 
     all_lists = list_names()
 
-    selected_list = st.selectbox(
-        "Liste auswählen",
-        options=all_lists,
-        key="selected_list"
-    )
+    selected_list = st.selectbox("Liste auswählen", options=all_lists, key="selected_list")
 
     if selected_list:
         st.session_state["current_df"] = load_participants(selected_list)
 
-    # Pending List Handler
+    # Pending List
     if "pending_list" in st.session_state:
         new_list = st.session_state["pending_list"]
-
-        if "selected_list" in st.session_state:
-            del st.session_state["selected_list"]
-
         st.session_state["selected_list"] = new_list
         st.session_state["current_df"] = load_participants(new_list)
-
         del st.session_state["pending_list"]
         st.rerun()
 
-    # ----------------------------------------
-    # Neue Liste anlegen – mit Copy/Paste
-    # ----------------------------------------
+    # Neue Liste
     with st.expander("➕ Neue Liste anlegen"):
         new_list_name = st.text_input("Name der neuen Liste", key="new_list_name_input")
 
@@ -144,7 +147,7 @@ with st.sidebar:
         st.markdown(
             "Format: `Nachname Vorname Klasse` – pro Zeile ein Teilnehmer.<br>"
             "Trennzeichen wie Leerzeichen, Tab, Komma, Semikolon werden automatisch erkannt.",
-            unsafe_allow_html=True
+            unsafe_allow_html=True,
         )
 
         pasted_text = st.text_area("Hier einfügen", height=200, key="paste_area")
@@ -158,28 +161,20 @@ with st.sidebar:
             entries = []
             for raw_line in pasted_text.splitlines():
                 line = raw_line.strip()
-                if not line:
-                    continue
-
-                clean = line.replace(";", " ").replace(",", " ")
-                parts = [p for p in re.split(r"\s+", clean) if p]
-                person_name = " ".join(parts)
-
-                entries.append([person_name, 4, False])
+                if line:
+                    clean = line.replace(";", " ").replace(",", " ")
+                    parts = re.split(r"\s+", clean)
+                    person_name = " ".join(parts)
+                    entries.append([person_name, 4, False])
 
             df_new = pd.DataFrame(entries, columns=EXPECTED_COLS)
-
             save_participants(name, df_new)
             st.session_state.pending_list = name
             st.rerun()
 
-    # ----------------------------------------
-    # Aktionen für bestehende Liste – ohne Umbenennen
-    # ----------------------------------------
+    # Aktionen
     if selected_list:
         with st.expander("⚙️ Aktionen"):
-
-            # 2-Spalten Layout für perfekte Darstellung
             col_left, col_right = st.columns(2)
 
             with col_left:
@@ -203,25 +198,18 @@ with st.sidebar:
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 )
 
-            # Löschen
             if st.button("🗑 Liste löschen", type="secondary", key="delete_btn"):
                 delete_list(selected_list)
-
-                if "selected_list" in st.session_state:
-                    del st.session_state["selected_list"]
-
+                del st.session_state["selected_list"]
                 st.session_state["current_df"] = pd.DataFrame(columns=EXPECTED_COLS)
                 st.rerun()
-
 
 # ----------------------------------------
 # Hauptbereich
 # ----------------------------------------
 st.title("🏆 Team- / Gruppen-Generator")
 
-# ------------------------------
-# 1) Teilnehmer bearbeiten
-# ------------------------------
+# 1 – Teilnehmer bearbeiten
 st.header("1️⃣ Teilnehmer bearbeiten")
 
 df = ensure_cols(st.session_state.get("current_df", pd.DataFrame(columns=EXPECTED_COLS)))
@@ -235,7 +223,7 @@ edited_df = st.data_editor(
         "Stärke (1-4)": st.column_config.NumberColumn("Stärke (1-4)", min_value=1, max_value=4, step=1),
         "Abwesend": st.column_config.CheckboxColumn("Abwesend"),
     },
-    key="editor"
+    key="editor",
 )
 
 if selected_list:
@@ -245,30 +233,27 @@ if selected_list:
         st.session_state["current_df"] = load_participants(selected_list)
         st.rerun()
 
-# ------------------------------
-# 2) Suche
-# ------------------------------
+# 2 – Suche
 st.header("2️⃣ Suche")
 
 search_term = st.text_input("🔍 Filter nach Name", key="search_input")
 
-if search_term:
-    filtered = edited_df[edited_df["Name"].str.contains(search_term, case=False, na=False)]
-else:
-    filtered = edited_df
+filtered = (
+    edited_df[edited_df["Name"].str.contains(search_term, case=False, na=False)]
+    if search_term
+    else edited_df
+)
 
 st.dataframe(filtered, width="stretch", height=250)
 
-# ------------------------------
-# 3) Teams generieren
-# ------------------------------
+# 3 – Teams generieren
 st.header("3️⃣ Teams generieren")
 
 col1, col2 = st.columns(2)
-num_groups = col1.number_input("Anzahl Gruppen", min_value=0, max_value=100, value=0, key="num_groups")
-group_size = col2.number_input("Gruppengröße", min_value=0, max_value=100, value=0, key="group_size")
+num_groups = col1.number_input("Anzahl Gruppen", min_value=0, max_value=100, value=0)
+group_size = col2.number_input("Gruppengröße", min_value=0, max_value=100, value=0)
 
-generate = st.button("🚀 Teams generieren", key="generate_btn")
+generate = st.button("🚀 Teams generieren")
 
 
 def snake_draft(df_sorted: pd.DataFrame, groups: int, rng: random.Random):
@@ -287,15 +272,11 @@ def snake_draft(df_sorted: pd.DataFrame, groups: int, rng: random.Random):
     return teams
 
 
-def export_csv(teams: list[list[dict]]) -> bytes:
+def export_csv(teams):
     rows = []
     for gi, team in enumerate(teams, start=1):
-        for person in team:
-            rows.append({
-                "Gruppe": gi,
-                "Name": person["Name"],
-                "Stärke": person["Stärke (1-4)"],
-            })
+        for p in team:
+            rows.append({"Gruppe": gi, "Name": p["Name"], "Stärke": p["Stärke (1-4)"]})
     return pd.DataFrame(rows).to_csv(index=False).encode("utf-8")
 
 
@@ -319,7 +300,7 @@ if generate:
         st.stop()
 
     if groups_count <= 0:
-        st.error("Die berechnete Gruppenzahl ist 0. Bitte Eingaben prüfen.")
+        st.error("Die berechnete Gruppenzahl ist 0.")
         st.stop()
 
     teams = snake_draft(present, groups_count, rng)
@@ -331,16 +312,15 @@ if generate:
         with cols[(i - 1) % len(cols)]:
             st.markdown(f"### Gruppe {i}")
             if not team:
-                st.info("Keine Personen in dieser Gruppe.")
+                st.info("Keine Personen.")
                 continue
             df_team = pd.DataFrame(team)
             st.write(f"**Gesamtstärke:** {df_team['Stärke (1-4)'].sum()}")
-            st.dataframe(df_team[["Name", "Stärke (1-4)"]], width="stretch", hide_index=True)
+            st.dataframe(df_team[["Name", "Stärke (1-4)"]], hide_index=True)
 
     st.download_button(
         "⬇️ Teams als CSV",
         export_csv(teams),
         file_name=f"Teams_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
         mime="text/csv",
-        key="download_teams_csv"
     )
