@@ -17,7 +17,7 @@ st.set_page_config(
 )
 
 # ----------------------------------------
-# CSS – verhindert Zeilenumbrüche bei Buttons
+# CSS
 # ----------------------------------------
 st.markdown("""
 <style>
@@ -29,10 +29,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ----------------------------------------
-# CSV Persistenz
+# CSV Persistenz – stabiler Projektpfad
 # ----------------------------------------
-
-# Sichere Bestimmung des Basisverzeichnisses
 try:
     BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 except:
@@ -40,13 +38,6 @@ except:
 
 PARTICIPANTS_DIR = os.path.join(BASE_DIR, "participants")
 os.makedirs(PARTICIPANTS_DIR, exist_ok=True)
-
-# --- DEBUG (kann später entfernt werden) ---
-st.write("Working Directory:", os.getcwd())
-st.write("BASE_DIR:", BASE_DIR)
-st.write("Participants Dir:", PARTICIPANTS_DIR)
-st.write("Files:", os.listdir(PARTICIPANTS_DIR))
-# --------------------------------------------
 
 EXPECTED_COLS = ["Name", "Stärke (1-4)", "Abwesend"]
 
@@ -62,12 +53,11 @@ def sanitize_filename(name: str) -> str:
 
 def list_names() -> list[str]:
     files = [f for f in os.listdir(PARTICIPANTS_DIR) if f.lower().endswith(".csv")]
-    names = [os.path.splitext(f)[0] for f in files]
-    return sorted(names, key=lambda s: s.lower())
+    return sorted(files, key=lambda s: s.lower())
 
 
-def path_for_list(name: str) -> str:
-    return os.path.join(PARTICIPANTS_DIR, sanitize_filename(name) + ".csv")
+def path_for_list(filename: str) -> str:
+    return os.path.join(PARTICIPANTS_DIR, filename)
 
 
 def ensure_cols(df: pd.DataFrame) -> pd.DataFrame:
@@ -77,7 +67,7 @@ def ensure_cols(df: pd.DataFrame) -> pd.DataFrame:
         if c not in df.columns:
             if c == "Stärke (1-4)":
                 df[c] = 4
-            elif c == "Abwesent":
+            elif c == "Abwesend":
                 df[c] = False
             else:
                 df[c] = ""
@@ -93,8 +83,8 @@ def ensure_cols(df: pd.DataFrame) -> pd.DataFrame:
     return df[EXPECTED_COLS]
 
 
-def load_participants(name: str) -> pd.DataFrame:
-    p = path_for_list(name)
+def load_participants(filename: str) -> pd.DataFrame:
+    p = path_for_list(filename)
     if not os.path.exists(p):
         return pd.DataFrame(columns=EXPECTED_COLS)
     try:
@@ -104,16 +94,17 @@ def load_participants(name: str) -> pd.DataFrame:
     return ensure_cols(df)
 
 
-def save_participants(name: str, df: pd.DataFrame):
-    ensure_cols(df).to_csv(path_for_list(name), index=False, encoding="utf-8")
+def save_participants(filename: str, df: pd.DataFrame):
+    ensure_cols(df).to_csv(path_for_list(filename), index=False, encoding="utf-8")
 
 
 def create_list(name: str):
-    save_participants(name, pd.DataFrame(columns=EXPECTED_COLS))
+    filename = sanitize_filename(name) + ".csv"
+    save_participants(filename, pd.DataFrame(columns=EXPECTED_COLS))
 
 
-def delete_list(name: str):
-    p = path_for_list(name)
+def delete_list(filename: str):
+    p = path_for_list(filename)
     if os.path.exists(p):
         os.remove(p)
 
@@ -124,24 +115,30 @@ def delete_list(name: str):
 with st.sidebar:
     st.header("👥 Teilnehmerlisten")
 
-    all_lists = list_names()
+    files = list_names()
+    mapping = {f: os.path.splitext(f)[0] for f in files}
 
-    selected_list = st.selectbox("Liste auswählen", options=all_lists, key="selected_list")
+    selected_file = st.selectbox(
+        "Liste auswählen",
+        options=list(mapping.keys()),
+        format_func=lambda f: mapping[f],
+        key="selected_file"
+    )
 
-    if selected_list:
-        st.session_state["current_df"] = load_participants(selected_list)
+    if selected_file:
+        st.session_state["current_df"] = load_participants(selected_file)
 
-    # Pending List
-    if "pending_list" in st.session_state:
-        new_list = st.session_state["pending_list"]
-        st.session_state["selected_list"] = new_list
-        st.session_state["current_df"] = load_participants(new_list)
-        del st.session_state["pending_list"]
+    # Pending (nach Neuanlage)
+    if "pending_file" in st.session_state:
+        pf = st.session_state["pending_file"]
+        st.session_state["selected_file"] = pf
+        st.session_state["current_df"] = load_participants(pf)
+        del st.session_state["pending_file"]
         st.rerun()
 
     # Neue Liste
     with st.expander("➕ Neue Liste anlegen"):
-        new_list_name = st.text_input("Name der neuen Liste", key="new_list_name_input")
+        new_list_name = st.text_input("Name der neuen Liste")
 
         st.markdown("### Teilnehmer einfügen (Copy & Paste)")
         st.markdown(
@@ -150,39 +147,43 @@ with st.sidebar:
             unsafe_allow_html=True,
         )
 
-        pasted_text = st.text_area("Hier einfügen", height=200, key="paste_area")
+        pasted_text = st.text_area("Hier einfügen", height=200)
 
-        if st.button("Liste erstellen", key="btn_new_list"):
-            name = new_list_name.strip()
-            if not name:
+        if st.button("Liste erstellen"):
+            if not new_list_name.strip():
                 st.error("Bitte gültigen Listennamen eingeben.")
                 st.stop()
 
+            filename = sanitize_filename(new_list_name.strip()) + ".csv"
+
             entries = []
-            for raw_line in pasted_text.splitlines():
-                line = raw_line.strip()
-                if line:
-                    clean = line.replace(";", " ").replace(",", " ")
-                    parts = re.split(r"\s+", clean)
-                    person_name = " ".join(parts)
-                    entries.append([person_name, 4, False])
+            for line in pasted_text.splitlines():
+                clean = line.strip()
+                if not clean:
+                    continue
+
+                clean = clean.replace(";", " ").replace(",", " ")
+                parts = [p for p in re.split(r"\s+", clean) if p]
+                person_name = " ".join(parts)
+                entries.append([person_name, 4, False])
 
             df_new = pd.DataFrame(entries, columns=EXPECTED_COLS)
-            save_participants(name, df_new)
-            st.session_state.pending_list = name
+            save_participants(filename, df_new)
+
+            st.session_state.pending_file = filename
             st.rerun()
 
     # Aktionen
-    if selected_list:
+    if selected_file:
         with st.expander("⚙️ Aktionen"):
             col_left, col_right = st.columns(2)
+            df_export = st.session_state.get("current_df", pd.DataFrame(columns=EXPECTED_COLS))
 
             with col_left:
-                df_export = st.session_state.get("current_df", pd.DataFrame(columns=EXPECTED_COLS))
                 st.download_button(
                     "📥 CSV herunterladen",
                     df_export.to_csv(index=False).encode("utf-8"),
-                    file_name=f"{selected_list}.csv",
+                    file_name=selected_file,
                     mime="text/csv",
                 )
 
@@ -194,18 +195,19 @@ with st.sidebar:
                 st.download_button(
                     "📄 Excel herunterladen",
                     buf.getvalue(),
-                    file_name=f"{selected_list}.xlsx",
+                    file_name=selected_file.replace(".csv", ".xlsx"),
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 )
 
-            if st.button("🗑 Liste löschen", type="secondary", key="delete_btn"):
-                delete_list(selected_list)
-                del st.session_state["selected_list"]
+            if st.button("🗑 Liste löschen"):
+                delete_list(selected_file)
+                del st.session_state["selected_file"]
                 st.session_state["current_df"] = pd.DataFrame(columns=EXPECTED_COLS)
                 st.rerun()
 
+
 # ----------------------------------------
-# Hauptbereich
+# HAUPTBEREICH
 # ----------------------------------------
 st.title("🏆 Team- / Gruppen-Generator")
 
@@ -223,25 +225,23 @@ edited_df = st.data_editor(
         "Stärke (1-4)": st.column_config.NumberColumn("Stärke (1-4)", min_value=1, max_value=4, step=1),
         "Abwesend": st.column_config.CheckboxColumn("Abwesend"),
     },
-    key="editor",
 )
 
-if selected_list:
-    if st.button("💾 Änderungen speichern", type="primary", key="save_btn"):
-        save_participants(selected_list, ensure_cols(edited_df))
+if selected_file:
+    if st.button("💾 Änderungen speichern", type="primary"):
+        save_participants(selected_file, ensure_cols(edited_df))
         st.success("Liste gespeichert.")
-        st.session_state["current_df"] = load_participants(selected_list)
+        st.session_state["current_df"] = load_participants(selected_file)
         st.rerun()
 
 # 2 – Suche
 st.header("2️⃣ Suche")
 
-search_term = st.text_input("🔍 Filter nach Name", key="search_input")
+search_term = st.text_input("🔍 Filter nach Name")
 
 filtered = (
     edited_df[edited_df["Name"].str.contains(search_term, case=False, na=False)]
-    if search_term
-    else edited_df
+    if search_term else edited_df
 )
 
 st.dataframe(filtered, width="stretch", height=250)
@@ -276,7 +276,9 @@ def export_csv(teams):
     rows = []
     for gi, team in enumerate(teams, start=1):
         for p in team:
-            rows.append({"Gruppe": gi, "Name": p["Name"], "Stärke": p["Stärke (1-4)"]})
+            rows.append(
+                {"Gruppe": gi, "Name": p["Name"], "Stärke": p["Stärke (1-4)"]}
+            )
     return pd.DataFrame(rows).to_csv(index=False).encode("utf-8")
 
 
@@ -289,7 +291,10 @@ if generate:
 
     rng = random.Random()
     present["__r"] = [rng.random() for _ in range(len(present))]
-    present = present.sort_values(["Stärke (1-4)", "__r"], ascending=[False, True]).drop(columns="__r")
+    present = (
+        present.sort_values(["Stärke (1-4)", "__r"], ascending=[False, True])
+        .drop(columns="__r")
+    )
 
     if num_groups > 0 and group_size == 0:
         groups_count = int(num_groups)
