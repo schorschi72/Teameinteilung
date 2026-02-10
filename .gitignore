@@ -1,0 +1,10 @@
+*
+!.gitignore
+!*.py
+!requirements.txt
+!README.md
+!streamlit_app.py
+
+!participants/
+!participants/*.csv
+!participants/*.txt
