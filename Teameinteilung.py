@@ -7,6 +7,15 @@ from datetime import datetime
 import pandas as pd
 import streamlit as st
 
+st.markdown("""
+    <div style='background-color:#f0f2f6;padding:15px;border-radius:10px'>
+        <h2 style='margin:0;'>Jürg Boltshauser – 10.02.2026</h2>
+    </div>
+""", unsafe_allow_html=True)
+
+
+
+
 # ----------------------------------------
 # Streamlit Setup
 # ----------------------------------------
