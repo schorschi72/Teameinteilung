@@ -1,18 +1,24 @@
 # -------------------------
-# (Deine bisherigen Regeln bleiben...)
+# Ignoriere alles
+# -------------------------
+*
+
+# -------------------------
+# Ausnahmen (diese Dateien/Ordner sollen NICHT ignoriert werden)
 # -------------------------
 
-# Verhindere, dass ALLES ignoriert wird (entferne diese Zeile ODER setze die Ausnahmen direkt danach):
-# *
-# Falls du sie behältst, setze die folgenden Negationen NACH dieser Zeile:
-
-# Erlaube Quellcode & wichtige Dateien
+# Gitignore selbst
 !.gitignore
+
+# Python-Quellcode
 !*.py
+
+# Wichtige Projektdateien
 !requirements.txt
 !README.md
 !streamlit_app.py
 
-# Erlaube Ordner für Teilnehmerlisten (CSV)
+# Teilnehmerlisten erlauben
 !participants/
 !participants/*.csv
+!participants/*.txt
