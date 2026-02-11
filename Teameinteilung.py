@@ -13,9 +13,6 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-
-
-
 # ----------------------------------------
 # Streamlit Setup
 # ----------------------------------------
@@ -137,15 +134,16 @@ with st.sidebar:
     if selected_file:
         st.session_state["current_df"] = load_participants(selected_file)
 
-    # Pending (nach Neuanlage)
+    # ---------------- FIXED BLOCK ----------------
     if "pending_file" in st.session_state:
         pf = st.session_state["pending_file"]
-        st.session_state["selected_file"] = pf
-        st.session_state["current_df"] = load_participants(pf)
         del st.session_state["pending_file"]
-        st.rerun()
 
-    # Neue Liste
+        st.session_state["current_df"] = load_participants(pf)
+        st.session_state["selected_file"] = pf
+        st.rerun()
+    # ---------------------------------------------
+
     with st.expander("➕ Neue Liste anlegen"):
         new_list_name = st.text_input("Name der neuen Liste")
 
@@ -179,10 +177,9 @@ with st.sidebar:
             df_new = pd.DataFrame(entries, columns=EXPECTED_COLS)
             save_participants(filename, df_new)
 
-            st.session_state.pending_file = filename
+            st.session_state["pending_file"] = filename
             st.rerun()
 
-    # Aktionen
     if selected_file:
         with st.expander("⚙️ Aktionen"):
             col_left, col_right = st.columns(2)
@@ -213,7 +210,6 @@ with st.sidebar:
                 del st.session_state["selected_file"]
                 st.session_state["current_df"] = pd.DataFrame(columns=EXPECTED_COLS)
                 st.rerun()
-
 
 # ----------------------------------------
 # HAUPTBEREICH
