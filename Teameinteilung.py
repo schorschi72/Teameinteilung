@@ -121,40 +121,32 @@ def delete_list(filename: str):
 with st.sidebar:
     st.header("👥 Teilnehmerlisten")
 
-    # 1) Verfügbare Dateien lesen
     files = list_names()
     mapping = {f: os.path.splitext(f)[0] for f in files}
     options = list(mapping.keys())
 
-    # 2) Falls gerade eine neue Liste erstellt wurde, setze sie als Auswahl,
-    #    aber WICHTIG: VOR dem selectbox-Widget.
     if "pending_file" in st.session_state:
         pf = st.session_state["pending_file"]
-        # pending Flag entfernen, damit es nur einmal wirkt
         del st.session_state["pending_file"]
-        # Nur setzen, wenn die Datei wirklich existiert (Race-Condition vermeiden)
         if pf in options:
             st.session_state["selected_file"] = pf
 
-    # 3) Initialwert für selected_file, falls noch nicht gesetzt
     if "selected_file" not in st.session_state:
         st.session_state["selected_file"] = options[0] if options else None
 
-    # 4) selectbox anzeigen; der Wert kommt/bleibt aus st.session_state["selected_file"]
-    #    Kein manuelles Setzen nach dem Widget!
     selected_file = st.selectbox(
         "Liste auswählen",
         options=options,
         index=(options.index(st.session_state["selected_file"]) if st.session_state["selected_file"] in options else 0) if options else None,
         format_func=lambda f: mapping.get(f, f),
-        key="selected_file",  # Widget kontrolliert den State
+        key="selected_file",
     )
 
-    # 5) Daten der gewählten Liste in den State laden (Daten, nicht den Widget-Key setzen)
+    # --- WICHTIG: Daten NICHT mehr im Session-State speichern ---
     if selected_file:
-        st.session_state["current_df"] = load_participants(selected_file)
+        current_df = load_participants(selected_file)
     else:
-        st.session_state["current_df"] = pd.DataFrame(columns=EXPECTED_COLS)
+        current_df = pd.DataFrame(columns=EXPECTED_COLS)
 
     # Neue Liste anlegen
     with st.expander("➕ Neue Liste anlegen"):
@@ -190,7 +182,6 @@ with st.sidebar:
             df_new = pd.DataFrame(entries, columns=EXPECTED_COLS)
             save_participants(filename, df_new)
 
-            # Nur das Flag setzen und rerun — die selectbox übernimmt im nächsten Run
             st.session_state["pending_file"] = filename
             st.rerun()
 
@@ -198,12 +189,11 @@ with st.sidebar:
     if selected_file:
         with st.expander("⚙️ Aktionen"):
             col_left, col_right = st.columns(2)
-            df_export = st.session_state.get("current_df", pd.DataFrame(columns=EXPECTED_COLS))
 
             with col_left:
                 st.download_button(
                     "📥 CSV herunterladen",
-                    df_export.to_csv(index=False).encode("utf-8"),
+                    current_df.to_csv(index=False).encode("utf-8"),
                     file_name=selected_file,
                     mime="text/csv",
                 )
@@ -211,7 +201,7 @@ with st.sidebar:
             with col_right:
                 buf = io.BytesIO()
                 with pd.ExcelWriter(buf, engine="openpyxl") as writer:
-                    df_export.to_excel(writer, index=False)
+                    current_df.to_excel(writer, index=False)
 
                 st.download_button(
                     "📄 Excel herunterladen",
@@ -222,15 +212,12 @@ with st.sidebar:
 
             if st.button("🗑 Liste löschen"):
                 delete_list(selected_file)
-                # Liste in State leeren und ggf. neue Auswahl setzen
                 remaining = list_names()
-                st.session_state["current_df"] = pd.DataFrame(columns=EXPECTED_COLS)
                 if remaining:
                     st.session_state["selected_file"] = remaining[0]
                 else:
                     st.session_state["selected_file"] = None
                 st.rerun()
-
 
 # ----------------------------------------
 # HAUPTBEREICH
@@ -240,7 +227,7 @@ st.title("🏆 Team- / Gruppen-Generator")
 # 1 – Teilnehmer bearbeiten
 st.header("1️⃣ Teilnehmer bearbeiten")
 
-df = ensure_cols(st.session_state.get("current_df", pd.DataFrame(columns=EXPECTED_COLS)))
+df = ensure_cols(current_df)
 
 edited_df = st.data_editor(
     df,
@@ -253,13 +240,10 @@ edited_df = st.data_editor(
     },
 )
 
-selected_file = st.session_state.get("selected_file")
-
 if selected_file:
     if st.button("💾 Änderungen speichern", type="primary"):
         save_participants(selected_file, ensure_cols(edited_df))
         st.success("Liste gespeichert.")
-        st.session_state["current_df"] = load_participants(selected_file)
         st.rerun()
 
 # 2 – Suche
