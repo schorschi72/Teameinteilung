@@ -11,9 +11,7 @@ from datetime import datetime
 import pandas as pd
 import streamlit as st
 
-st.write("Arbeitsverzeichnis:", os.getcwd())
-st.write("CSV-Verzeichnis:", PARTICIPANTS_DIR)
-st.write("Gefundene Dateien:", list(os.listdir(PARTICIPANTS_DIR)))
+
 
 # ----------------------------------------
 # Streamlit Setup (muss als erstes kommen)
@@ -57,6 +55,10 @@ PARTICIPANTS_DIR = os.path.join(BASE_DIR, "participants")
 os.makedirs(PARTICIPANTS_DIR, exist_ok=True)
 
 EXPECTED_COLS = ["Name", "Stärke (1-4)", "Abwesend"]
+
+st.write("Arbeitsverzeichnis:", os.getcwd())
+st.write("CSV-Verzeichnis:", PARTICIPANTS_DIR)
+st.write("Gefundene Dateien:", list(os.listdir(PARTICIPANTS_DIR)))
 
 
 def sanitize_filename(name: str) -> str:
