@@ -1,3 +1,7 @@
+# =========================================
+# Variante A – Immer neu laden (empfohlen)
+# =========================================
+
 import os
 import re
 import io
@@ -7,20 +11,23 @@ from datetime import datetime
 import pandas as pd
 import streamlit as st
 
-st.markdown("""
-    <div style='background-color:#f0f2f6;padding:15px;border-radius:10px'>
-        <h2 style='margin:0;'>Jürg Boltshauser – 10.02.2026</h2>
-    </div>
-""", unsafe_allow_html=True)
-
 # ----------------------------------------
-# Streamlit Setup
+# Streamlit Setup (muss als erstes kommen)
 # ----------------------------------------
 st.set_page_config(
     page_title="Team-/Gruppen-Generator – Jürg Boltshauser",
     page_icon="🏆",
     layout="wide",
 )
+
+# ----------------------------------------
+# Header
+# ----------------------------------------
+st.markdown("""
+    <div style='background-color:#f0f2f6;padding:15px;border-radius:10px'>
+        <h2 style='margin:0;'>Jürg Boltshauser – 10.02.2026</h2>
+    </div>
+""", unsafe_allow_html=True)
 
 # ----------------------------------------
 # CSS
@@ -39,7 +46,7 @@ st.markdown("""
 # ----------------------------------------
 try:
     BASE_DIR = os.path.dirname(os.path.realpath(__file__))
-except:
+except Exception:
     BASE_DIR = os.path.realpath(os.getcwd())
 
 PARTICIPANTS_DIR = os.path.join(BASE_DIR, "participants")
@@ -95,7 +102,7 @@ def load_participants(filename: str) -> pd.DataFrame:
         return pd.DataFrame(columns=EXPECTED_COLS)
     try:
         df = pd.read_csv(p, encoding="utf-8")
-    except:
+    except Exception:
         df = pd.read_csv(p, encoding="latin-1")
     return ensure_cols(df)
 
@@ -121,19 +128,23 @@ def delete_list(filename: str):
 with st.sidebar:
     st.header("👥 Teilnehmerlisten")
 
+    # 1) Verfügbare Dateien lesen
     files = list_names()
     mapping = {f: os.path.splitext(f)[0] for f in files}
     options = list(mapping.keys())
 
+    # 2) Falls gerade eine neue Liste erstellt wurde, setze sie als Auswahl
     if "pending_file" in st.session_state:
         pf = st.session_state["pending_file"]
         del st.session_state["pending_file"]
         if pf in options:
             st.session_state["selected_file"] = pf
 
+    # 3) Initialwert für selected_file, falls noch nicht gesetzt
     if "selected_file" not in st.session_state:
         st.session_state["selected_file"] = options[0] if options else None
 
+    # 4) Selectbox – der Wert kommt/bleibt aus st.session_state["selected_file"]
     selected_file = st.selectbox(
         "Liste auswählen",
         options=options,
@@ -142,7 +153,14 @@ with st.sidebar:
         key="selected_file",
     )
 
-    # --- WICHTIG: Daten NICHT mehr im Session-State speichern ---
+    # 🚀 WICHTIGER ERST-START-FIX:
+    # Beim ersten Start kann selected_file None sein. Dann setzen wir die erste Option
+    # und erzwingen einen sofortigen Re-Run, damit die CSV im gleichen Start geladen wird.
+    if selected_file is None and options:
+        st.session_state["selected_file"] = options[0]
+        st.rerun()
+
+    # 5) Daten der gewählten Liste laden – NICHT im Session-State speichern
     if selected_file:
         current_df = load_participants(selected_file)
     else:
@@ -182,6 +200,7 @@ with st.sidebar:
             df_new = pd.DataFrame(entries, columns=EXPECTED_COLS)
             save_participants(filename, df_new)
 
+            # Flag setzen und rerun — die selectbox übernimmt im nächsten Run
             st.session_state["pending_file"] = filename
             st.rerun()
 
@@ -219,6 +238,7 @@ with st.sidebar:
                     st.session_state["selected_file"] = None
                 st.rerun()
 
+
 # ----------------------------------------
 # HAUPTBEREICH
 # ----------------------------------------
@@ -244,6 +264,7 @@ if selected_file:
     if st.button("💾 Änderungen speichern", type="primary"):
         save_participants(selected_file, ensure_cols(edited_df))
         st.success("Liste gespeichert.")
+        # Kein Session-State-Reset notwendig, wir laden ohnehin bei jedem Run frisch
         st.rerun()
 
 # 2 – Suche
