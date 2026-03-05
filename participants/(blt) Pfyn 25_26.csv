@@ -1,18 +1,18 @@
 Name,Stärke (1-4),Abwesend
 Levent,4,False
-Alman,4,False
+Alman,4,True
 Merhan,4,False
-Florin,4,False
-Laris,4,False
+Florin,4,True
+Laris,4,True
 Tim H.,4,False
 Ramon,4,False
 Crispin,4,False
 Flurin,4,False
 Majid,4,False
-Fabio Pf.,4,False
+Fabio Pf.,4,True
 Fabio H.,4,False
-Armon,4,False
-Tim Sp.,4,False
+Armon,4,True
+Tim Sp.,4,True
 Josias,4,False
 Luca Car.,4,False
 Sandro,4,False
@@ -20,4 +20,4 @@ Joris,4,False
 Fabio F.,4,False
 Antonio,4,False
 Anastasio,4,False
-Fabio W.,4,False
+Fabio W.,4,True
