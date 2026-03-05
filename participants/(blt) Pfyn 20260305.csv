@@ -1,15 +1,15 @@
 Name,Stärke (1-4),Abwesend
-Anastasio,4,False
-Antonio,4,False
-Levent,4,False
+Anastasio,3,False
+Antonio,2,False
+Levent,2,False
 Luca Car.,4,False
-Merhan,4,False
-Ramon,4,False
-Tim H.,4,False
+Merhan,3,False
+Ramon,2,False
+Tim H.,3,False
 Fabio H.,4,False
-Crispin,4,False
-Flurin,4,False
-Majid,4,False
-Joris,4,False
-Josias,4,False
-Sandro,4,False
+Crispin,4,True
+Flurin,2,False
+Majid,1,False
+Joris,2,False
+Josias,3,False
+Sandro,3,False
