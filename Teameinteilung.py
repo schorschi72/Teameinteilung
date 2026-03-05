@@ -254,6 +254,25 @@ def list_names() -> list[str]:
         files = [f for f in os.listdir(PARTICIPANTS_DIR) if f.lower().endswith(".csv")]
         return sorted(files, key=str.lower)
 
+def extract_prefixes(files: list[str]) -> list[str]:
+    prefixes = set()
+    for f in files:
+        m = re.match(r"^\(([A-Za-z]{3})\)", f)
+        if m:
+            prefixes.add(m.group(1).upper())
+    return sorted(prefixes)
+
+def extract_prefixes(files: list[str]) -> list[str]:
+    """
+    Extrahiert eindeutige 3-Buchstaben-Kürzel aus Dateinamen im Format '(ABC) ...'
+    """
+    prefixes = set()
+    for f in files:
+        m = re.match(r"^\(([A-Za-z]{3})\)", f)
+        if m:
+            prefixes.add(m.group(1).upper())
+    return sorted(prefixes)
+
 def load_participants(filename: str) -> pd.DataFrame:
     """Lädt immer die aktuellste Version: bei GitHub-Setup direkt aus GitHub, sonst lokal."""
     if GITHUB_ENABLED:
@@ -345,6 +364,21 @@ with st.sidebar:
     # 1) Verfügbare Dateien lesen
     try:
         files = list_names()
+
+        # --- Kürzel extrahieren ---
+        all_prefixes = extract_prefixes(files)
+
+        prefix_selection = st.selectbox(
+            "Filter nach Benutzer-Kürzel",
+            options=["Alle"] + all_prefixes,
+            index=0,
+        )
+
+        # --- Filter anwenden ---
+        if prefix_selection != "Alle":
+            pattern = fr"^\({prefix_selection}\)"
+            files = [f for f in files if re.match(pattern, f, flags=re.IGNORECASE)]
+
     except Exception as e:
         st.error(f"Fehler beim Laden der Listen: {e}")
         files = []
