@@ -1,15 +1,15 @@
 Name,Stärke (1-4),Abwesend
-Abdiji Art,3,False
-Coti Buron,2,False
+Abdiji Art,3,True
+Coti Buron,2,True
 Benz Michael,3,False
 Camani Lorenzo,2,False
 Tanner Silas,4,False
 Kistler Joël,4,True
 Radic Nina,1,False
 Häne Elia,4,False
-Sayed Ahmad Rebaz,4,False
+Sayed Ahmad Rebaz,4,True
 Memoli Noah,4,False
-Piscazzi Gabriel,2,False
+Piscazzi Gabriel,2,True
 Stölzle Johannes,4,True
 Honold Samuel,4,False
 Marbach Lea,1,False
@@ -17,8 +17,8 @@ Mauer Tino,4,False
 Cifyildiz Nerea,1,False
 Parameswaran Pavithiran,3,False
 Löwe Liv,1,False
-Oberlin Valeria,1,False
-Birdaini Ezana,1,False
+Oberlin Valeria,1,True
+Birdaini Ezana,1,True
 Copellini William,1,False
 Heqimaj Sara,1,False
 Bajramaj Luan,4,True
