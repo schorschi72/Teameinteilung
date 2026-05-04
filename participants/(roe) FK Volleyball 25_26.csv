@@ -1,6 +1,6 @@
 Name,Stärke (1-4),Abwesend
-Anderegg Jasmin 2Fb,4,True
-Brüschweiler Lea 1Fc,4,True
+Anderegg Jasmin 2Fb,4,False
+Brüschweiler Lea 1Fc,4,False
 Deplazes Jana 1Fc,4,False
 Dietrich Philippa 2Mb,4,False
 Gottschling Sara 2Mb,4,False
@@ -11,8 +11,8 @@ Roski Mia 2Mfz,4,False
 Schäfer Angelina 2Mb,4,False
 Schilling Elena 4Mb,4,False
 Schoch Emily 4Mb,4,False
-Suter Lara 2Mb,4,True
-Baga Mina 2Fc,4,True
+Suter Lara 2Mb,4,False
+Baga Mina 2Fc,4,False
 Germann Amelie 1Fb,4,False
 Huwiler Noelle 2Fc,4,True
 Klingler Selina 1Fb,4,False
@@ -21,4 +21,4 @@ Pasche Josephine 4Mb,4,False
 Reichen Lionel 1Ma,4,False
 Vuong Thao My 4Mb,4,False
 Weik Nicolas 3Mfz,4,False
-Zucchetti Nastasia 2Fb,4,True
+Zucchetti Nastasia 2Fb,4,False
